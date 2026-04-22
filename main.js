@@ -20,6 +20,111 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const fadeElements = document.querySelectorAll('.fade-in');
     fadeElements.forEach(el => observer.observe(el));
+
+    // Accordion Toggle Logic
+    const accordionHeaders = document.querySelectorAll('.accordion-header');
+    const hoverScrambleChars = '!<>-_\\/[]{}—=+*^?#';
+
+    accordionHeaders.forEach(header => {
+        const h3 = header.querySelector('h3');
+        const originalName = h3.textContent;
+
+        // 호버 시 스크램블 효과
+        header.addEventListener('mouseenter', () => {
+            if (h3.dataset.scrambling === 'true') return;
+            h3.dataset.scrambling = 'true';
+            
+            let iteration = 0;
+            const totalLength = originalName.length;
+            const maxIterations = totalLength + 8; // 글자수 + 여유 반복
+            
+            const interval = setInterval(() => {
+                h3.textContent = originalName
+                    .split('')
+                    .map((char, index) => {
+                        if (index < iteration - 8) return char; // 앞에서부터 순차 해독
+                        if (char === ' ' || char === '(' || char === ')') return char;
+                        return hoverScrambleChars[Math.floor(Math.random() * hoverScrambleChars.length)];
+                    })
+                    .join('');
+                
+                iteration++;
+                if (iteration > maxIterations) {
+                    clearInterval(interval);
+                    h3.textContent = originalName;
+                    h3.dataset.scrambling = 'false';
+                }
+            }, 50); // 50ms 간격 (더 천천히)
+        });
+
+        // 클릭 이벤트
+        header.addEventListener('click', () => {
+            const currentItem = header.parentElement;
+            const isActive = currentItem.classList.contains('active');
+            
+            // Close all items
+            document.querySelectorAll('.accordion-item').forEach(item => {
+                item.classList.remove('active');
+                item.querySelector('.accordion-icon').textContent = '↓';
+            });
+            
+            // If the clicked item was not active, open it
+            if (!isActive) {
+                currentItem.classList.add('active');
+                header.querySelector('.accordion-icon').textContent = '↑';
+            }
+        });
+    });
+
+    // Experience Title — Scramble Reveal Animation
+    const experienceTitle = document.getElementById('experience-title');
+    if (experienceTitle) {
+        const originalText = experienceTitle.dataset.text;
+        const scrambleChars = '!<>-_\\/[]{}—=+*^?#________';
+        let hasPlayed = false;
+
+        // 처음에는 스크램블 상태로 표시
+        let scrambled = '';
+        for (let i = 0; i < originalText.length; i++) {
+            scrambled += scrambleChars[Math.floor(Math.random() * scrambleChars.length)];
+        }
+        experienceTitle.textContent = scrambled;
+
+        const titleObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !hasPlayed) {
+                    hasPlayed = true;
+                    titleObserver.unobserve(entry.target);
+                    
+                    let iteration = 0;
+                    const totalIterations = originalText.length * 3; // 글자당 3번 반복
+                    
+                    const interval = setInterval(() => {
+                        experienceTitle.textContent = originalText
+                            .split('')
+                            .map((char, index) => {
+                                // 이미 해독된 글자는 원래 문자 표시
+                                if (index < Math.floor(iteration / 3)) {
+                                    return char;
+                                }
+                                // 아직 해독 안 된 글자는 랜덤 문자
+                                return scrambleChars[Math.floor(Math.random() * scrambleChars.length)];
+                            })
+                            .join('');
+                        
+                        iteration++;
+                        
+                        if (iteration > totalIterations) {
+                            clearInterval(interval);
+                            experienceTitle.textContent = originalText;
+                        }
+                    }, 40); // 40ms 간격
+                }
+            });
+        }, { threshold: 0.3 });
+
+        titleObserver.observe(experienceTitle);
+    }
 });
 
 function initMatterPhysics() {
@@ -92,6 +197,9 @@ function initMatterPhysics() {
     const width = container.offsetWidth;
     const height = container.offsetHeight;
 
+    // 뷰포트 너비에 따라 스케일 팩터 계산 (1200px 기준, 최소 0.5)
+    const scaleFactor = Math.max(0.5, Math.min(1, width / 1200));
+
     // Create boundaries
     const ground = Bodies.rectangle(width/2, height + 50, width * 2, 100, { isStatic: true });
     const leftWall = Bodies.rectangle(-50, height/2, 100, height * 2, { isStatic: true });
@@ -105,6 +213,10 @@ function initMatterPhysics() {
         // Create DOM element
         const el = document.createElement('div');
         el.className = 'word-block';
+
+        // 뷰포트에 따라 폰트와 패딩을 비례 축소
+        el.style.fontSize = (2.5 * scaleFactor) + 'rem';
+        el.style.padding = (12 * scaleFactor) + 'px ' + (24 * scaleFactor) + 'px';
         
         // 내부 텍스트를 감싸는 span 생성 (글리치 애니메이션용, 상위 div의 transform과 충돌하지 않기 위해)
         const innerText = document.createElement('span');
@@ -166,7 +278,7 @@ function initMatterPhysics() {
         const el = document.createElement('div');
         el.className = 'circle-block';
         
-        const size = 16; // 24px에서 30% 축소
+        const size = Math.round(16 * scaleFactor); // 뷰포트에 비례 축소
         el.style.width = size + 'px';
         el.style.height = size + 'px';
         
@@ -287,6 +399,19 @@ function initMatterPhysics() {
         }
     });
 
+    // 초기 너비 기록 (리사이즈 시 비율 계산 기준)
+    const initialWidth = width;
+
+    // 리사이즈 시 시각적 스케일 적용 함수
+    function applyVisualScale() {
+        const currentWidth = container.offsetWidth;
+        const visualScale = Math.min(1, currentWidth / initialWidth);
+        wordsContainer.style.transformOrigin = 'top left';
+        wordsContainer.style.transform = `scale(${visualScale})`;
+        render.canvas.style.transformOrigin = 'top left';
+        render.canvas.style.transform = `scale(${visualScale})`;
+    }
+
     // Handle window resize
     window.addEventListener('resize', () => {
         const newWidth = container.offsetWidth;
@@ -295,6 +420,7 @@ function initMatterPhysics() {
         render.canvas.height = newHeight;
         Matter.Body.setPosition(ground, { x: newWidth / 2, y: newHeight + 50 });
         Matter.Body.setPosition(rightWall, { x: newWidth + 50, y: newHeight / 2 });
+        applyVisualScale();
     });
 
     // run the renderer
