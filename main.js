@@ -40,13 +40,13 @@ document.addEventListener("DOMContentLoaded", () => {
         header.addEventListener('click', () => {
             const currentItem = header.parentElement;
             const isActive = currentItem.classList.contains('active');
-            
+
             // Close all items
             document.querySelectorAll('.accordion-item').forEach(item => {
                 item.classList.remove('active');
                 item.querySelector('.accordion-icon').textContent = '↓';
             });
-            
+
             // If the clicked item was not active, open it
             if (!isActive) {
                 currentItem.classList.add('active');
@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
         elements.forEach(el => {
             const originalText = el.dataset.text || el.textContent;
             if (!el.dataset.text) el.dataset.text = originalText;
-            
+
             let hasPlayed = false;
 
             // 초기 상태: 랜덤 문자로 채우기
@@ -79,10 +79,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (entry.isIntersecting && !hasPlayed) {
                         hasPlayed = true;
                         titleObserver.unobserve(entry.target);
-                        
+
                         let iteration = 0;
                         const totalIterations = originalText.length * 2;
-                        
+
                         const interval = setInterval(() => {
                             el.textContent = originalText
                                 .split('')
@@ -92,7 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                     return scrambleChars[Math.floor(Math.random() * scrambleChars.length)];
                                 })
                                 .join('');
-                            
+
                             iteration++;
                             if (iteration > totalIterations) {
                                 clearInterval(interval);
@@ -107,10 +107,85 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Initialize existing features
     initTitleScramble('#experience-title');
     initTitleScramble('#contact-title');
     initTitleScramble('.work-title-ko');
     initTitleScramble('.work-title-en');
+
+    // Slider Logic
+    function initSlider(id) {
+        const slider = document.getElementById(id);
+        if (!slider) return;
+
+        const track = slider.querySelector('.slider-track');
+        const dots = slider.querySelectorAll('.dot');
+        let images = Array.from(track.children);
+        const originalCount = images.length;
+        if (originalCount <= 1) return;
+
+        // 클론 생성 (무한 루프용)
+        const firstClone = images[0].cloneNode(true);
+        const lastClone = images[originalCount - 1].cloneNode(true);
+
+        track.appendChild(firstClone);
+        track.insertBefore(lastClone, images[0]);
+
+        let currentIdx = 1; // 클론 때문에 1번부터 시작
+        let isTransitioning = false;
+
+        function updateSlider(animate = true) {
+            if (!animate) {
+                track.style.transition = 'none';
+            } else {
+                track.style.transition = 'transform 0.6s cubic-bezier(0.65, 0, 0.35, 1)';
+            }
+            track.style.transform = `translateX(-${currentIdx * 100}%)`;
+
+            // 도트 업데이트 (인덱스 보정)
+            let dotIdx = currentIdx - 1;
+            if (currentIdx === 0) dotIdx = originalCount - 1;
+            if (currentIdx === originalCount + 1) dotIdx = 0;
+
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('active', i === dotIdx);
+            });
+        }
+
+        // 초기 위치 설정
+        updateSlider(false);
+
+        track.addEventListener('transitionend', () => {
+            isTransitioning = false;
+            if (currentIdx === 0) {
+                currentIdx = originalCount;
+                updateSlider(false);
+            }
+            if (currentIdx === originalCount + 1) {
+                currentIdx = 1;
+                updateSlider(false);
+            }
+        });
+
+        dots.forEach((dot, i) => {
+            dot.addEventListener('click', () => {
+                if (isTransitioning) return;
+                currentIdx = i + 1;
+                isTransitioning = true;
+                updateSlider();
+            });
+        });
+
+        // Auto slide
+        setInterval(() => {
+            if (isTransitioning) return;
+            currentIdx++;
+            isTransitioning = true;
+            updateSlider();
+        }, 4000);
+    }
+
+    initSlider('myzy-slider');
 
     // Contact Title — Scramble Reveal Animation (Experience와 동일)
     const contactTitle = document.getElementById('contact-title');
@@ -130,10 +205,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (entry.isIntersecting && !hasPlayed) {
                     hasPlayed = true;
                     contactObserver.unobserve(entry.target);
-                    
+
                     let iteration = 0;
                     const totalIterations = originalText.length * 3;
-                    
+
                     const interval = setInterval(() => {
                         contactTitle.textContent = originalText
                             .split('')
@@ -144,9 +219,9 @@ document.addEventListener("DOMContentLoaded", () => {
                                 return scrambleChars[Math.floor(Math.random() * scrambleChars.length)];
                             })
                             .join('');
-                        
+
                         iteration++;
-                        
+
                         if (iteration > totalIterations) {
                             clearInterval(interval);
                             contactTitle.textContent = originalText;
@@ -172,14 +247,14 @@ document.addEventListener("DOMContentLoaded", () => {
     function applyHoverScramble(el) {
         if (el.dataset.scrambling === 'true') return;
         el.dataset.scrambling = 'true';
-        
+
         const originalName = el.innerText;
         const hoverScrambleChars = '!<>-_\\/[]{}—=+*^?#';
-        
+
         let iteration = 0;
         const totalLength = originalName.length;
         const maxIterations = totalLength + 8;
-        
+
         const interval = setInterval(() => {
             el.textContent = originalName
                 .split('')
@@ -189,7 +264,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     return hoverScrambleChars[Math.floor(Math.random() * hoverScrambleChars.length)];
                 })
                 .join('');
-            
+
             iteration++;
             if (iteration > maxIterations) {
                 clearInterval(interval);
@@ -207,17 +282,17 @@ function initMatterPhysics() {
 
     // module aliases
     const Engine = Matter.Engine,
-          Render = Matter.Render,
-          Runner = Matter.Runner,
-          Bodies = Matter.Bodies,
-          Composite = Matter.Composite,
-          Mouse = Matter.Mouse,
-          MouseConstraint = Matter.MouseConstraint,
-          Events = Matter.Events;
+        Render = Matter.Render,
+        Runner = Matter.Runner,
+        Bodies = Matter.Bodies,
+        Composite = Matter.Composite,
+        Mouse = Matter.Mouse,
+        MouseConstraint = Matter.MouseConstraint,
+        Events = Matter.Events;
 
     // create an engine
     const engine = Engine.create();
-    
+
     // create a renderer
     const render = Render.create({
         element: container,
@@ -234,8 +309,8 @@ function initMatterPhysics() {
     render.canvas.style.opacity = '0';
 
     const words = [
-        "Graphic design", "Typography", "Design planning", 
-        "IP branding", "Character design", "Marketing design", 
+        "Graphic design", "Typography", "Design planning",
+        "IP branding", "Character design", "Marketing design",
         "Brand experience"
     ];
 
@@ -274,10 +349,10 @@ function initMatterPhysics() {
     const scaleFactor = Math.max(0.5, Math.min(1, width / 1200));
 
     // Create boundaries
-    const ground = Bodies.rectangle(width/2, height + 50, width * 2, 100, { isStatic: true });
-    const leftWall = Bodies.rectangle(-50, height/2, 100, height * 2, { isStatic: true });
-    const rightWall = Bodies.rectangle(width + 50, height/2, 100, height * 2, { isStatic: true });
-    const ceiling = Bodies.rectangle(width/2, -2000, width * 2, 100, { isStatic: true });
+    const ground = Bodies.rectangle(width / 2, height + 50, width * 2, 100, { isStatic: true });
+    const leftWall = Bodies.rectangle(-50, height / 2, 100, height * 2, { isStatic: true });
+    const rightWall = Bodies.rectangle(width + 50, height / 2, 100, height * 2, { isStatic: true });
+    const ceiling = Bodies.rectangle(width / 2, -2000, width * 2, 100, { isStatic: true });
 
     Composite.add(engine.world, [ground, leftWall, rightWall, ceiling]);
 
@@ -290,13 +365,13 @@ function initMatterPhysics() {
         // 뷰포트에 따라 폰트와 패딩을 비례 축소
         el.style.fontSize = (2.5 * scaleFactor) + 'rem';
         el.style.padding = (12 * scaleFactor) + 'px ' + (24 * scaleFactor) + 'px';
-        
+
         // 내부 텍스트를 감싸는 span 생성 (글리치 애니메이션용, 상위 div의 transform과 충돌하지 않기 위해)
         const innerText = document.createElement('span');
         innerText.className = 'word-text';
         innerText.innerText = word;
         el.appendChild(innerText);
-        
+
         // 중복 없이 최대한 다양한 컬러가 들어가도록 섞인 팔레트에서 순차적으로 적용
         const color = shuffledWordColors[index % shuffledWordColors.length];
         el.style.backgroundColor = color.bg;
@@ -322,7 +397,7 @@ function initMatterPhysics() {
         // 중앙 상단 부근에 뭉쳐서 생성
         const x = width / 2 + (Math.random() - 0.5) * 200;
         const y = -150 - (Math.random() * 200);
-        
+
         const body = Bodies.rectangle(x, y, elWidth, elHeight, {
             restitution: 0.6, // Bounciness
             friction: 0.1,
@@ -330,7 +405,7 @@ function initMatterPhysics() {
             chamfer: { radius: elHeight / 2 }, // Pill shape
             angle: (Math.random() - 0.5) * 0.5 // 초기 랜덤 회전각
         });
-        
+
         // 충돌 이벤트에서 사용하기 위해 몸체에 DOM 요소 참조 및 식별자 추가
         body.domElement = innerText;
         body.isWord = true;
@@ -341,7 +416,7 @@ function initMatterPhysics() {
             x: (Math.random() - 0.5) * 25,
             y: (Math.random() - 0.5) * 5
         });
-        
+
         bodies.push(body);
         Composite.add(engine.world, body);
     });
@@ -350,29 +425,29 @@ function initMatterPhysics() {
     for (let i = 0; i < 7; i++) {
         const el = document.createElement('div');
         el.className = 'circle-block';
-        
+
         const size = Math.round(16 * scaleFactor); // 뷰포트에 비례 축소
         el.style.width = size + 'px';
         el.style.height = size + 'px';
-        
+
         // 중복 없이 최대한 다양한 컬러가 들어가도록 섞인 팔레트에서 순차적으로 적용
         const color = shuffledCircleColors[i % shuffledCircleColors.length];
         el.style.backgroundColor = color.bg;
         if (color.border) el.style.border = color.border;
-        
+
         wordsContainer.appendChild(el);
         domElements.push(el);
 
         // 중앙 상단 부근에 뭉쳐서 생성
         const x = width / 2 + (Math.random() - 0.5) * 200;
         const y = -150 - (Math.random() * 200);
-        
+
         const body = Bodies.circle(x, y, size / 2, {
             restitution: 0.8, // Bouncier circles
             friction: 0.1,
             density: 0.001
         });
-        
+
         // 사방으로 퍼지는 폭죽(Burst) 효과 속도 부여
         Matter.Body.setVelocity(body, {
             x: (Math.random() - 0.5) * 35,
@@ -473,10 +548,10 @@ function initMatterPhysics() {
     const chars = '!<>-_\\/[]{}—=+*^?#________';
 
     // 충돌 시 텍스트 스크램블 효과 트리거
-    Events.on(engine, 'collisionStart', function(event) {
+    Events.on(engine, 'collisionStart', function (event) {
         event.pairs.forEach(pair => {
             const { bodyA, bodyB } = pair;
-            
+
             // 속도가 일정 수준 이상일 때만 발생
             if (bodyA.isWord && bodyA.domElement && bodyA.speed > 1.5) triggerTextScramble(bodyA.domElement);
             if (bodyB.isWord && bodyB.domElement && bodyB.speed > 1.5) triggerTextScramble(bodyB.domElement);
@@ -485,17 +560,17 @@ function initMatterPhysics() {
 
     function triggerTextScramble(el) {
         if (el.dataset.flashing === 'true') return;
-        
+
         el.dataset.flashing = 'true';
         const originalText = el.dataset.originalText;
         const length = originalText.length;
-        
+
         let iterations = 0;
         const maxIterations = 5; // 5번 빠르게 스크램블
-        
+
         const interval = setInterval(() => {
             let scrambled = '';
-            for(let i=0; i<length; i++) {
+            for (let i = 0; i < length; i++) {
                 if (originalText[i] === ' ') {
                     scrambled += ' ';
                 } else {
@@ -504,8 +579,8 @@ function initMatterPhysics() {
             }
             el.innerText = scrambled;
             iterations++;
-            
-            if(iterations >= maxIterations) {
+
+            if (iterations >= maxIterations) {
                 clearInterval(interval);
                 el.innerText = originalText;
                 el.dataset.flashing = 'false';
@@ -514,14 +589,14 @@ function initMatterPhysics() {
     }
 
     // Sync DOM elements with physics bodies
-    Events.on(engine, 'afterUpdate', function() {
+    Events.on(engine, 'afterUpdate', function () {
         for (let i = 0; i < bodies.length; i++) {
             const body = bodies[i];
             const el = domElements[i];
-            
+
             const x = body.position.x - el.offsetWidth / 2;
             const y = body.position.y - el.offsetHeight / 2;
-            
+
             el.style.transform = `translate(${x}px, ${y}px) rotate(${body.angle}rad)`;
         }
     });
@@ -564,10 +639,10 @@ function initContactPhysics() {
     if (!container || !contactSection) return;
 
     const Engine = Matter.Engine,
-          Render = Matter.Render,
-          Runner = Matter.Runner,
-          Bodies = Matter.Bodies,
-          Composite = Matter.Composite;
+        Render = Matter.Render,
+        Runner = Matter.Runner,
+        Bodies = Matter.Bodies,
+        Composite = Matter.Composite;
 
     const engine = Engine.create();
     let render, runner;
@@ -595,10 +670,10 @@ function initContactPhysics() {
                 });
 
                 const boundaryOptions = { isStatic: true, render: { visible: false } };
-                ground = Bodies.rectangle(width/2, height + 50, width * 10, 100, boundaryOptions);
-                leftWall = Bodies.rectangle(-50, height/2, 100, height * 2, boundaryOptions);
-                rightWall = Bodies.rectangle(width + 50, height/2, 100, height * 2, boundaryOptions);
-                
+                ground = Bodies.rectangle(width / 2, height + 50, width * 10, 100, boundaryOptions);
+                leftWall = Bodies.rectangle(-50, height / 2, 100, height * 2, boundaryOptions);
+                rightWall = Bodies.rectangle(width + 50, height / 2, 100, height * 2, boundaryOptions);
+
                 Composite.add(engine.world, [ground, leftWall, rightWall]);
 
                 Render.run(render);
