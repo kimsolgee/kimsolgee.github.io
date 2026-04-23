@@ -167,25 +167,46 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
+        // Auto slide with variable duration
+        let slideTimer;
+        function startTimer() {
+            clearTimeout(slideTimer);
+            
+            // 현재 슬라이드 타입 확인 (1-based currentIdx를 0-based images 인덱스로 변환)
+            let checkIdx = currentIdx - 1;
+            if (currentIdx === 0) checkIdx = originalCount - 1;
+            if (currentIdx > originalCount) checkIdx = 0;
+            
+            const currentElement = images[checkIdx];
+            const isVideo = currentElement && currentElement.tagName.toLowerCase() === 'video';
+            const duration = isVideo ? 6000 : 4000;
+
+            slideTimer = setTimeout(() => {
+                if (!isTransitioning) {
+                    currentIdx++;
+                    isTransitioning = true;
+                    updateSlider();
+                }
+                startTimer();
+            }, duration);
+        }
+
+        startTimer();
+
+        // 도트 클릭 시 타이머 리셋
         dots.forEach((dot, i) => {
             dot.addEventListener('click', () => {
                 if (isTransitioning) return;
                 currentIdx = i + 1;
                 isTransitioning = true;
                 updateSlider();
+                startTimer(); // 클릭 시 타이머 초기화
             });
         });
-
-        // Auto slide
-        setInterval(() => {
-            if (isTransitioning) return;
-            currentIdx++;
-            isTransitioning = true;
-            updateSlider();
-        }, 4000);
     }
 
     initSlider('myzy-slider');
+    initSlider('yogiyo-slider');
 
     // Contact Title — Scramble Reveal Animation (Experience와 동일)
     const contactTitle = document.getElementById('contact-title');
