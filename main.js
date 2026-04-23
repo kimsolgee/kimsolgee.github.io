@@ -1,6 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
     // Matter.js Physics Animation for Hero
     initMatterPhysics();
+    // Contact Section Bouncing Ball
+    initContactPhysics();
 
     // Scroll Fade-in Animation
     const observerOptions = {
@@ -31,30 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // 호버 시 스크램블 효과
         header.addEventListener('mouseenter', () => {
-            if (h3.dataset.scrambling === 'true') return;
-            h3.dataset.scrambling = 'true';
-            
-            let iteration = 0;
-            const totalLength = originalName.length;
-            const maxIterations = totalLength + 8; // 글자수 + 여유 반복
-            
-            const interval = setInterval(() => {
-                h3.textContent = originalName
-                    .split('')
-                    .map((char, index) => {
-                        if (index < iteration - 8) return char; // 앞에서부터 순차 해독
-                        if (char === ' ' || char === '(' || char === ')') return char;
-                        return hoverScrambleChars[Math.floor(Math.random() * hoverScrambleChars.length)];
-                    })
-                    .join('');
-                
-                iteration++;
-                if (iteration > maxIterations) {
-                    clearInterval(interval);
-                    h3.textContent = originalName;
-                    h3.dataset.scrambling = 'false';
-                }
-            }, 50); // 50ms 간격 (더 천천히)
+            applyHoverScramble(h3);
         });
 
         // 클릭 이벤트
@@ -124,6 +103,93 @@ document.addEventListener("DOMContentLoaded", () => {
         }, { threshold: 0.3 });
 
         titleObserver.observe(experienceTitle);
+    }
+
+    // Contact Title — Scramble Reveal Animation (Experience와 동일)
+    const contactTitle = document.getElementById('contact-title');
+    if (contactTitle) {
+        const originalText = contactTitle.dataset.text;
+        const scrambleChars = '!<>-_\\/[]{}—=+*^?#________';
+        let hasPlayed = false;
+
+        let scrambled = '';
+        for (let i = 0; i < originalText.length; i++) {
+            scrambled += scrambleChars[Math.floor(Math.random() * scrambleChars.length)];
+        }
+        contactTitle.textContent = scrambled;
+
+        const contactObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !hasPlayed) {
+                    hasPlayed = true;
+                    contactObserver.unobserve(entry.target);
+                    
+                    let iteration = 0;
+                    const totalIterations = originalText.length * 3;
+                    
+                    const interval = setInterval(() => {
+                        contactTitle.textContent = originalText
+                            .split('')
+                            .map((char, index) => {
+                                if (index < Math.floor(iteration / 3)) {
+                                    return char;
+                                }
+                                return scrambleChars[Math.floor(Math.random() * scrambleChars.length)];
+                            })
+                            .join('');
+                        
+                        iteration++;
+                        
+                        if (iteration > totalIterations) {
+                            clearInterval(interval);
+                            contactTitle.textContent = originalText;
+                        }
+                    }, 40);
+                }
+            });
+        }, { threshold: 0.3 });
+
+        contactObserver.observe(contactTitle);
+
+        // Contact Title 호버 스크램블 추가
+        contactTitle.addEventListener('mouseenter', () => applyHoverScramble(contactTitle));
+    }
+
+    // Contact Email 호버 스크램블 추가
+    const contactEmail = document.querySelector('.contact-email');
+    if (contactEmail) {
+        contactEmail.addEventListener('mouseenter', () => applyHoverScramble(contactEmail));
+    }
+
+    // Hover Scramble Common Function
+    function applyHoverScramble(el) {
+        if (el.dataset.scrambling === 'true') return;
+        el.dataset.scrambling = 'true';
+        
+        const originalName = el.innerText;
+        const hoverScrambleChars = '!<>-_\\/[]{}—=+*^?#';
+        
+        let iteration = 0;
+        const totalLength = originalName.length;
+        const maxIterations = totalLength + 8;
+        
+        const interval = setInterval(() => {
+            el.textContent = originalName
+                .split('')
+                .map((char, index) => {
+                    if (index < iteration - 8) return char;
+                    if (char === ' ' || char === '(' || char === ')' || char === '@' || char === '.') return char;
+                    return hoverScrambleChars[Math.floor(Math.random() * hoverScrambleChars.length)];
+                })
+                .join('');
+            
+            iteration++;
+            if (iteration > maxIterations) {
+                clearInterval(interval);
+                el.textContent = originalName;
+                el.dataset.scrambling = 'false';
+            }
+        }, 50);
     }
 });
 
@@ -322,25 +388,79 @@ function initMatterPhysics() {
         }
     });
 
-    // 데스크톱 환경에서 마우스 휠 스크롤이 먹통이 되는 현상 방지 (Matter.js 휠 캡처 해제)
-    mouse.element.removeEventListener("mousewheel", mouse.mousewheel);
-    mouse.element.removeEventListener("DOMMouseScroll", mouse.mousewheel);
-    
-    // 모바일 환경 터치 스크롤 문제 해결
-    mouse.element.removeEventListener('touchstart', mouse.mousedown);
-    mouse.element.removeEventListener('touchmove', mouse.mousemove);
-    mouse.element.removeEventListener('touchend', mouse.mouseup);
+    // 모바일 여부 확인
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-    mouse.element.addEventListener('touchstart', mouse.mousedown, { passive: true });
-    mouse.element.addEventListener('touchmove', (e) => {
-        if (mouseConstraint.body) {
-            e.preventDefault(); // 블록을 잡고 있을 때만 스크롤 방지
-        }
-        mouse.mousemove(e);
-    }, { passive: false });
-    mouse.element.addEventListener('touchend', mouse.mouseup, { passive: true });
+    if (!isMobile) {
+        // 데스크톱에서만 마우스 드래그 활성화
+        Composite.add(engine.world, mouseConstraint);
+        // 마우스 휠 스크롤 방해 금지
+        mouse.element.removeEventListener("mousewheel", mouse.mousewheel);
+        mouse.element.removeEventListener("DOMMouseScroll", mouse.mousewheel);
+    } else {
+        // 모바일에서는 캔버스의 터치 이벤트를 완전히 무시하여 스크롤 보장
+        mouse.element.style.pointerEvents = 'none';
 
-    Composite.add(engine.world, mouseConstraint);
+        // 히어로 섹션 전체에서 터치 감지 → 물리 바디 쿼리로 정확한 블록 탭/스와이프 처리
+        const heroSection = document.getElementById('hero');
+        let heroTouchStartX = 0, heroTouchStartY = 0, heroTouchStartTime = 0;
+
+        heroSection.addEventListener('touchstart', (e) => {
+            heroTouchStartX = e.touches[0].clientX;
+            heroTouchStartY = e.touches[0].clientY;
+            heroTouchStartTime = Date.now();
+        }, { passive: true });
+
+        heroSection.addEventListener('touchend', (e) => {
+            const touch = e.changedTouches[0];
+            const rect = render.canvas.getBoundingClientRect();
+
+            // 캔버스 내 좌표로 변환 (스케일 보정)
+            const scaleX = render.canvas.width / rect.width;
+            const scaleY = render.canvas.height / rect.height;
+            const point = {
+                x: (touch.clientX - rect.left) * scaleX,
+                y: (touch.clientY - rect.top) * scaleY
+            };
+
+            // 터치 위치 근처의 물리 바디 탐색 (80px 반경)
+            const allBodies = Composite.allBodies(engine.world);
+            let closestBody = null, closestDist = Infinity;
+            for (const b of allBodies) {
+                if (!b.isWord) continue;
+                const dx = b.position.x - point.x;
+                const dy = b.position.y - point.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 80 && dist < closestDist) {
+                    closestDist = dist;
+                    closestBody = b;
+                }
+            }
+
+            if (closestBody) {
+                const dx = touch.clientX - heroTouchStartX;
+                const dy = touch.clientY - heroTouchStartY;
+                const dt = Math.max((Date.now() - heroTouchStartTime) / 1000, 0.05);
+                const swipeDist = Math.sqrt(dx * dx + dy * dy);
+
+                let fx, fy;
+                if (swipeDist < 15) {
+                    // 탭: 위로 크게 튀기기
+                    fx = (Math.random() - 0.5) * 0.2;
+                    fy = -0.45;
+                } else {
+                    // 스와이프: 손가락 방향으로 힘 부여
+                    const speed = Math.min(swipeDist / dt / 4000, 0.3);
+                    fx = (dx / swipeDist) * speed;
+                    fy = (dy / swipeDist) * speed;
+                }
+
+                Matter.Body.applyForce(closestBody, closestBody.position, { x: fx, y: fy });
+                triggerTextScramble(closestBody.domElement);
+            }
+        }, { passive: true });
+    }
+
     render.mouse = mouse;
 
     const chars = '!<>-_\\/[]{}—=+*^?#________';
@@ -429,4 +549,89 @@ function initMatterPhysics() {
     // run the engine
     const runner = Runner.create();
     Runner.run(runner, engine);
+}
+
+function initContactPhysics() {
+    const container = document.getElementById('contact-physics-container');
+    const contactSection = document.getElementById('contact');
+    if (!container || !contactSection) return;
+
+    const Engine = Matter.Engine,
+          Render = Matter.Render,
+          Runner = Matter.Runner,
+          Bodies = Matter.Bodies,
+          Composite = Matter.Composite;
+
+    const engine = Engine.create();
+    let render, runner;
+    let width, height;
+    let ground, leftWall, rightWall;
+
+    const palette = ['#2B53EB', '#58F3A8', '#8C70F7', '#E35B63', '#F5C651', '#EB2BD6', '#000000'];
+    let spawnedCount = 0;
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting && spawnedCount === 0) {
+                // 섹션이 보일 때 엔진 및 렌더러 초기화
+                width = container.offsetWidth || 300;
+                height = container.offsetHeight || 350;
+
+                render = Render.create({
+                    element: container,
+                    engine: engine,
+                    options: {
+                        width: width,
+                        height: height,
+                        background: 'transparent',
+                        wireframes: false
+                    }
+                });
+
+                // Boundaries (바닥을 캔버스 최하단에 맞춤)
+                const boundaryOptions = { isStatic: true, render: { visible: false } };
+                ground = Bodies.rectangle(width/2, height + 10, width * 2, 20, boundaryOptions);
+                leftWall = Bodies.rectangle(-10, height/2, 20, height, boundaryOptions);
+                rightWall = Bodies.rectangle(width + 10, height/2, 20, height, boundaryOptions);
+                
+                Composite.add(engine.world, [ground, leftWall, rightWall]);
+
+                Render.run(render);
+                runner = Runner.create();
+                Runner.run(runner, engine);
+
+                // 공 차례대로 생성 (3초 간격)
+                const spawnInterval = setInterval(() => {
+                    if (spawnedCount >= 100) { // 100개까지 생성
+                        clearInterval(spawnInterval);
+                        return;
+                    }
+
+                    const size = 12; // 최소 크기로 고정
+                    const xSpawn = width - 15;
+                    const ySpawn = height - 30; // 바닥 근처에서 생성해서 위로 튀기기
+
+                    const ball = Bodies.circle(xSpawn, ySpawn, size / 2, {
+                        restitution: 0.8,
+                        friction: 0.1,
+                        render: {
+                            fillStyle: palette[Math.floor(Math.random() * palette.length)]
+                        }
+                    });
+
+                    Matter.Body.setVelocity(ball, {
+                        x: -4 - Math.random() * 3,
+                        y: -10 - Math.random() * 4 // 상단 잘림 방지를 위해 약간 낮게
+                    });
+
+                    Composite.add(engine.world, ball);
+                    spawnedCount++;
+                }, 3000); // 3초 간격으로 변경
+
+                observer.unobserve(contactSection);
+            }
+        });
+    }, { threshold: 0.1 }); // 10%만 보여도 바로 시작
+
+    observer.observe(contactSection);
 }
