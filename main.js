@@ -55,55 +55,62 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // Experience Title — Scramble Reveal Animation
-    const experienceTitle = document.getElementById('experience-title');
-    if (experienceTitle) {
-        const originalText = experienceTitle.dataset.text;
+    // Generic Title Scramble Reveal Animation
+    function initTitleScramble(selector) {
+        const elements = document.querySelectorAll(selector);
         const scrambleChars = '!<>-_\\/[]{}—=+*^?#________';
-        let hasPlayed = false;
 
-        // 처음에는 스크램블 상태로 표시
-        let scrambled = '';
-        for (let i = 0; i < originalText.length; i++) {
-            scrambled += scrambleChars[Math.floor(Math.random() * scrambleChars.length)];
-        }
-        experienceTitle.textContent = scrambled;
+        elements.forEach(el => {
+            const originalText = el.dataset.text || el.textContent;
+            if (!el.dataset.text) el.dataset.text = originalText;
+            
+            let hasPlayed = false;
 
-        const titleObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting && !hasPlayed) {
-                    hasPlayed = true;
-                    titleObserver.unobserve(entry.target);
-                    
-                    let iteration = 0;
-                    const totalIterations = originalText.length * 3; // 글자당 3번 반복
-                    
-                    const interval = setInterval(() => {
-                        experienceTitle.textContent = originalText
-                            .split('')
-                            .map((char, index) => {
-                                // 이미 해독된 글자는 원래 문자 표시
-                                if (index < Math.floor(iteration / 3)) {
-                                    return char;
-                                }
-                                // 아직 해독 안 된 글자는 랜덤 문자
-                                return scrambleChars[Math.floor(Math.random() * scrambleChars.length)];
-                            })
-                            .join('');
+            // 초기 상태: 랜덤 문자로 채우기
+            let initialScrambled = '';
+            for (let i = 0; i < originalText.length; i++) {
+                if (originalText[i] === ' ') initialScrambled += ' ';
+                else initialScrambled += scrambleChars[Math.floor(Math.random() * scrambleChars.length)];
+            }
+            el.textContent = initialScrambled;
+
+            const titleObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && !hasPlayed) {
+                        hasPlayed = true;
+                        titleObserver.unobserve(entry.target);
                         
-                        iteration++;
+                        let iteration = 0;
+                        const totalIterations = originalText.length * 2;
                         
-                        if (iteration > totalIterations) {
-                            clearInterval(interval);
-                            experienceTitle.textContent = originalText;
-                        }
-                    }, 40); // 40ms 간격
-                }
-            });
-        }, { threshold: 0.3 });
+                        const interval = setInterval(() => {
+                            el.textContent = originalText
+                                .split('')
+                                .map((char, index) => {
+                                    if (index < Math.floor(iteration / 2)) return char;
+                                    if (char === ' ') return ' ';
+                                    return scrambleChars[Math.floor(Math.random() * scrambleChars.length)];
+                                })
+                                .join('');
+                            
+                            iteration++;
+                            if (iteration > totalIterations) {
+                                clearInterval(interval);
+                                el.textContent = originalText;
+                            }
+                        }, 30);
+                    }
+                });
+            }, { threshold: 0.1 });
 
-        titleObserver.observe(experienceTitle);
+            titleObserver.observe(el);
+        });
     }
+
+    initTitleScramble('#experience-title');
+    initTitleScramble('#contact-title');
+    initTitleScramble('.work-title-ko');
+    initTitleScramble('.work-title-en');
 
     // Contact Title — Scramble Reveal Animation (Experience와 동일)
     const contactTitle = document.getElementById('contact-title');
@@ -573,9 +580,8 @@ function initContactPhysics() {
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting && spawnedCount === 0) {
-                // 섹션이 보일 때 엔진 및 렌더러 초기화
-                width = container.offsetWidth || 300;
-                height = container.offsetHeight || 350;
+                width = container.offsetWidth;
+                height = container.offsetHeight;
 
                 render = Render.create({
                     element: container,
@@ -588,11 +594,10 @@ function initContactPhysics() {
                     }
                 });
 
-                // Boundaries (바닥을 캔버스 최하단에 맞춤)
                 const boundaryOptions = { isStatic: true, render: { visible: false } };
-                ground = Bodies.rectangle(width/2, height + 10, width * 2, 20, boundaryOptions);
-                leftWall = Bodies.rectangle(-10, height/2, 20, height, boundaryOptions);
-                rightWall = Bodies.rectangle(width + 10, height/2, 20, height, boundaryOptions);
+                ground = Bodies.rectangle(width/2, height + 50, width * 10, 100, boundaryOptions);
+                leftWall = Bodies.rectangle(-50, height/2, 100, height * 2, boundaryOptions);
+                rightWall = Bodies.rectangle(width + 50, height/2, 100, height * 2, boundaryOptions);
                 
                 Composite.add(engine.world, [ground, leftWall, rightWall]);
 
@@ -600,33 +605,45 @@ function initContactPhysics() {
                 runner = Runner.create();
                 Runner.run(runner, engine);
 
-                // 공 차례대로 생성 (3초 간격)
                 const spawnInterval = setInterval(() => {
-                    if (spawnedCount >= 100) { // 100개까지 생성
+                    if (spawnedCount >= 100) {
                         clearInterval(spawnInterval);
                         return;
                     }
 
-                    const size = 12; // 최소 크기로 고정
-                    const xSpawn = width - 15;
-                    const ySpawn = height - 30; // 바닥 근처에서 생성해서 위로 튀기기
+                    const size = 12;
+                    // 전체 가로 영역 중 랜덤한 위치에서 튀어오름
+                    const xSpawn = Math.random() * width;
+                    const ySpawn = height + 20;
 
                     const ball = Bodies.circle(xSpawn, ySpawn, size / 2, {
-                        restitution: 0.8,
-                        friction: 0.1,
+                        restitution: 0.7,
+                        friction: 0.05,
                         render: {
                             fillStyle: palette[Math.floor(Math.random() * palette.length)]
                         }
                     });
 
                     Matter.Body.setVelocity(ball, {
-                        x: -4 - Math.random() * 3,
-                        y: -10 - Math.random() * 4 // 상단 잘림 방지를 위해 약간 낮게
+                        x: (Math.random() - 0.5) * 6, // 좌우로 퍼짐
+                        y: -12 - Math.random() * 6    // 위로 튀어오름
                     });
 
                     Composite.add(engine.world, ball);
                     spawnedCount++;
-                }, 3000); // 3초 간격으로 변경
+                }, 2500); // 2.5초 간격으로 소폭 단축
+
+                // 리사이즈 대응
+                window.addEventListener('resize', () => {
+                    if (!render) return;
+                    width = container.offsetWidth;
+                    height = container.offsetHeight;
+                    render.canvas.width = width;
+                    render.canvas.height = height;
+                    Matter.Body.setPosition(ground, { x: width / 2, y: height + 50 });
+                    Matter.Body.setPosition(leftWall, { x: -50, y: height / 2 });
+                    Matter.Body.setPosition(rightWall, { x: width + 50, y: height / 2 });
+                });
 
                 observer.unobserve(contactSection);
             }

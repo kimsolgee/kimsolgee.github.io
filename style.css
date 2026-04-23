@@ -42,13 +42,14 @@ a:hover {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1.5rem 5%;
+    padding: 0.8rem 5%;
     position: sticky;
     top: 0;
     width: 100%;
-    background-color: var(--bg-color);
+    background-color: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
     z-index: 1000;
-    border-bottom: 1px solid var(--border-color);
 }
 
 .logo {
@@ -64,8 +65,8 @@ a:hover {
 }
 
 .nav-links a {
-    font-size: 1rem;
-    font-weight: 500;
+    font-size: 0.8125rem; /* 0.6875rem에서 2px 확대 */
+    font-weight: 600;
 }
 
 /* Sections */
@@ -190,7 +191,7 @@ section.about {
 
 .about-left .section-title {
     margin: 0; /* Changed from margin-bottom: 0 to reset all margins */
-    margin-top: -0.2em; /* Micro-adjustment to align the cap-heights */
+    margin-top: 0; /* 모바일 겹침 방지를 위해 기본값 0 */
     font-size: clamp(2.5rem, 5vw, 4rem);
     font-weight: 500;
     line-height: 1; /* Tighter line height for the big title */
@@ -200,11 +201,27 @@ section.about {
 }
 
 .about-right .about-intro {
-    margin-top: 0; /* Reset top margin for perfect alignment */
-    font-size: 0.9375rem; /* 18px -> 15px (approx -3pt) */
+    margin-top: 0;
+    font-size: 0.9375rem;
+    color: var(--text-primary);
+    line-height: 1.6;
+    margin-bottom: 1.5rem; /* 영문과 사이 간격 */
+}
+
+.about-intro-en {
+    font-size: 0.875rem;
     color: var(--text-primary);
     line-height: 1.6;
     margin-bottom: 4rem;
+}
+
+@media (min-width: 769px) {
+    .about-right .about-intro {
+        font-size: 0.84375rem; /* 10% 축소 */
+    }
+    .about-intro-en {
+        font-size: 0.7875rem; /* 10% 축소 */
+    }
 }
 
 .accordion {
@@ -236,6 +253,12 @@ section.about {
     font-size: 1.5rem;
     font-weight: 700;
     margin: 0;
+}
+
+@media (min-width: 769px) {
+    .accordion-header h3 {
+        font-size: 1.35rem; /* 10% 축소 */
+    }
 }
 
 .accordion-icon {
@@ -273,6 +296,12 @@ section.about {
     color: var(--text-primary);
 }
 
+@media (min-width: 769px) {
+    .resume-year, .resume-role {
+        font-size: 0.9rem; /* 10% 축소 */
+    }
+}
+
 .resume-list {
     list-style: none;
     padding: 0;
@@ -285,65 +314,193 @@ section.about {
     line-height: 1.6;
 }
 
+@media (min-width: 769px) {
+    .resume-list {
+        font-size: 0.855rem; /* 10% 축소 */
+    }
+}
+
 .resume-list li {
     margin-bottom: 0.5rem;
     word-break: keep-all;
+}
+
+/* 웹 전용: 수행업무 사이 행간 1px 줄이기 */
+@media (min-width: 769px) {
+    .resume-list li {
+        margin-bottom: 3px;
+    }
 }
 
 .resume-list li::before {
     content: '• ';
 }
 
-/* Work */
-.work-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 3rem;
+/* Work Page Layout */
+.work-container {
+    padding: 8rem 5% 5rem;
+    max-width: 1400px;
+    margin: 0 auto;
 }
 
-.work-card {
-    cursor: pointer;
+.work-item {
+    margin-bottom: 12rem;
+}
+
+.work-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-top: 1.5rem;
+    border-top: 1px solid #000;
+    margin-bottom: 2.5rem;
+}
+
+.work-titles {
+    flex: 1;
+}
+
+.work-title-ko {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+    letter-spacing: -0.02em;
+}
+
+.work-title-en {
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: #333;
+    letter-spacing: -0.01em;
+}
+
+.work-meta {
+    display: flex;
+    justify-content: flex-end;
+    text-align: right;
+}
+
+.meta-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.meta-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #000;
+    margin-bottom: 2px;
+    display: inline-block;
+}
+
+.meta-value {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #000;
+    line-height: 1.2;
+}
+
+.work-body {
+    display: grid;
+    grid-template-columns: 2.8fr 1fr;
+    gap: 2.45rem; /* 3.5rem에서 30% 축소 */
+    align-items: stretch;
+}
+
+.work-media {
+    width: 100%;
 }
 
 .work-image {
     width: 100%;
-    aspect-ratio: 4/3;
+    aspect-ratio: 16 / 9.5;
     background-color: #f5f5f5;
-    border-radius: 8px;
-    margin-bottom: 1.5rem;
+    border-radius: 16px;
     overflow: hidden;
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #ffffff;
-    font-size: 2rem;
-    font-weight: 700;
-    transition: transform 0.5s ease;
 }
 
-.bg-yogiyo { background: linear-gradient(135deg, #fa0050, #ff4c79); }
-.bg-queenit { background: linear-gradient(135deg, #000000, #333333); }
-.bg-playlist { background: linear-gradient(135deg, #111111, #444444); }
+.work-image.bg-taling { background-color: #111; }
+.work-image.bg-kmong { background-color: #fdf01b; }
+.work-image.bg-yogiyo { background-color: #FA0050; } /* 요기요 레드/핑크 */
+.work-image.bg-yogame { background-color: #FFD400; } /* 요게임 옐로우 */
+.work-image.bg-ateen { background-color: #00D1FF; } /* 에이틴 블루 */
 
-.work-card:hover .work-image {
-    transform: translateY(-10px);
+.work-aside {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 0.5rem 0;
 }
 
-.work-info h3 {
-    font-size: 1.5rem;
-    margin-bottom: 0.5rem;
+.work-description {
+    margin-bottom: 2rem;
 }
 
-.work-info p {
-    color: var(--text-secondary);
+.desc-ko {
+    font-size: 0.725rem;
+    line-height: 1.6;
+    margin-bottom: 1.2rem;
+    text-align: justify;
+    word-break: break-all;
+    text-justify: inter-character;
+    color: #000;
+    /* 4줄 생략 처리 */
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.desc-en {
+    font-size: 0.675rem;
+    line-height: 1.5;
+    text-align: left;
+    word-break: keep-all;
+    color: #000;
+    /* 5줄 생략 처리 */
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.work-image.bg-myzy { background-color: #00FF41; } /* 무용지용 그린 컬러 예시 */
+
+.more-button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0.85rem 1.2rem;
+    background-color: transparent;
+    border: 1px solid #000;
+    color: #000;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.more-button:hover {
+    background-color: #000;
+    color: #fff;
+}
+
+.more-button::after {
+    content: '>';
+    font-weight: 300;
     font-size: 1rem;
 }
 
-/* Contact */
+/* Contact Section (Index와 동일하게 유지) */
 .contact {
     padding-top: 6rem;
     padding-bottom: 6rem;
-    border-top: 1px solid var(--border-color);
 }
 
 .contact-container {
@@ -354,7 +511,7 @@ section.about {
 
 .contact-left .section-title {
     margin: 0;
-    margin-top: -0.2em;
+    margin-top: 0; /* 모바일 겹침 방지를 위해 기본값 0 */
     font-size: clamp(2.5rem, 5vw, 4rem);
     font-weight: 500;
     line-height: 1;
@@ -408,8 +565,8 @@ section.about {
 #contact-physics-container {
     position: absolute;
     bottom: 0;
-    right: 0;
-    width: 300px;
+    left: 0;
+    width: 100%;
     height: 350px;
     pointer-events: none;
     overflow: hidden; /* 영역 밖 라인 방지 */
@@ -424,14 +581,12 @@ section.about {
     position: relative; /* container positioning */
     padding-top: 6rem;
     padding-bottom: 6rem;
-    border-top: 1px solid var(--border-color);
 }
 footer {
     text-align: center;
     padding: 2rem;
-    color: var(--text-secondary);
-    font-size: 0.875rem;
-    border-top: 1px solid var(--border-color);
+    color: #d1d1d1; /* 아주 연한 회색 */
+    font-size: 0.75rem;
 }
 
 /* Animations */
@@ -439,6 +594,14 @@ footer {
     opacity: 0;
     transform: translateY(30px);
     transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+}
+
+/* 웹 전용: 타이틀과 본문 상단 라인 정교하게 맞추기 */
+@media (min-width: 769px) {
+    .about-left .section-title,
+    .contact-left .section-title {
+        margin-top: -0.15em; /* 웹에서 미세하게 위로 올려 본문 상단과 수평 정렬 */
+    }
 }
 
 .fade-in.visible {
@@ -449,7 +612,11 @@ footer {
 /* Responsive */
 @media (max-width: 768px) {
     .nav-links {
-        display: none;
+        display: flex;
+        gap: 1.2rem;
+    }
+    .nav-links a {
+        font-size: 0.8rem;
     }
     section {
         padding: 5rem 5%;
@@ -509,6 +676,80 @@ footer {
         grid-template-columns: 1fr;
         gap: 2rem;
     }
+
+    /* Work Page Mobile */
+    .work-container {
+        padding-top: 6rem;
+    }
+    .work-item {
+        margin-bottom: 6rem;
+    }
+    .work-header {
+        flex-direction: column;
+        gap: 1.35rem; /* 1.5rem에서 10% 축소 (Project Name과 DATE 사이) */
+        margin-bottom: 2.25rem; /* 2.5rem에서 10% 축소 (DATE와 Image Box 사이) */
+    }
+    .work-meta {
+        justify-content: flex-start;
+        text-align: left;
+        gap: 1.5rem;
+    }
+    .work-body {
+        grid-template-columns: 1fr;
+        gap: 1.8rem; /* 2rem에서 10% 축소 (Image Box와 텍스트 사이) */
+    }
+    .work-image {
+        aspect-ratio: 16 / 10;
+    }
+    .work-aside {
+        padding: 0;
+    }
+    .work-title-ko {
+        font-size: 1.15rem;
+    }
+    .work-title-en {
+        font-size: 1rem;
+    }
+
+    /* 모바일 워크 페이지 설명 2줄 생략 */
+    .desc-ko {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-align: left; /* 좌측 정렬로 변경하여 말줄임표 가독성 및 출력 보장 */
+        word-break: keep-all;
+    }
+    .desc-en {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+}
+
+/* Work Page Specific Text Color */
+.work-page,
+.work-page .logo,
+.work-page .nav-links a,
+.work-page .work-title-ko,
+.work-page .work-title-en,
+.work-page .meta-label,
+.work-page .meta-value,
+.work-page .desc-ko,
+.work-page .desc-en {
+    color: #000 !important;
+}
+
+/* 푸터 디자인은 히어로 페이지 하단(연한 회색)과 동일하게 유지 */
+.work-page footer,
+.work-page footer p {
+    color: #d1d1d1 !important;
+}
+
+/* 더보기 버튼 호버 시 텍스트 컬러 예외 (블랙 배경에 화이트 텍스트) */
+.work-page .more-button:hover {
+    color: #fff !important;
 }
 
 /* Tablet intermediate */
